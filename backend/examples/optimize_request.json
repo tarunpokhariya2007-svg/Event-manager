@@ -1,0 +1,25 @@
+{
+  "version": "1.0",
+  "config": {
+    "target_date": "2026-11-02",
+    "end_date": "2026-11-03",
+    "availability_windows": [
+      { "start_min": 540, "end_min": 720 },
+      { "start_min": 780, "end_min": 1080 }
+    ],
+    "working_weekdays": ["mon", "tue", "wed", "thu", "fri"],
+    "min_break_min": 0,
+    "allow_splitting": true,
+    "max_workload_min": 450,
+    "objective": "deadline"
+  },
+  "fixed_events": [
+    { "id": "e1", "title": "Lecture", "date": "2026-11-02", "start_min": 600, "end_min": 660, "priority": 4 }
+  ],
+  "flexible_tasks": [
+    { "id": "t1", "title": "Write spec", "duration_min": 300, "min_chunk_min": 60, "priority": 4,
+      "allow_split": true, "deadline_date": "2026-11-03" },
+    { "id": "t2", "title": "Review spec", "duration_min": 60, "allow_split": false, "priority": 3,
+      "prerequisite_ids": ["t1"], "deadline_date": "2026-11-02", "deadline_min": 1020 }
+  ]
+}

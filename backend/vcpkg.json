@@ -1,0 +1,8 @@
+{
+  "name": "chronoplan-backend",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "crow", "nlohmann-json", "sqlite3", "gtest", "libsodium", "openssl",
+    { "name": "curl", "default-features": false, "features": ["ssl"] }
+  ]
+}
