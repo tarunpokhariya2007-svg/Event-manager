@@ -35,7 +35,7 @@ COPY vcpkg.json ./
 COPY . .
 
 # Build the production application
-RUN cmake -S . -B build -G Ninja \
+RUN cmake -S . -B build -G "Unix Makefiles" \
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake \
     -DVCPKG_TARGET_TRIPLET=x64-linux \
     -DCHRONOPLAN_BUILD_TESTS=OFF \
