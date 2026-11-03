@@ -6,16 +6,20 @@
 # ============================================================
 
 
-# ------------------------------------------------------------
+# ============================================================
 # STAGE 1: BUILD
-# ------------------------------------------------------------
+# ============================================================
 
 FROM ubuntu:24.04 AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV VCPKG_ROOT=/opt/vcpkg
+ENV VCPKG_DISABLE_METRICS=1
 
-# Install Linux build tools and dependencies
+# ------------------------------------------------------------
+# Install Linux build tools
+# ------------------------------------------------------------
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     make \
@@ -36,13 +40,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Verify compiler and build tools
+# Verify build tools
 RUN gcc --version && \
     g++ --version && \
     cmake --version && \
     make --version
 
+# ------------------------------------------------------------
 # Install vcpkg
+# ------------------------------------------------------------
+
 RUN git clone https://github.com/microsoft/vcpkg.git ${VCPKG_ROOT} \
     && ${VCPKG_ROOT}/bootstrap-vcpkg.sh -disableMetrics
 
@@ -54,9 +61,9 @@ COPY vcpkg.json ./
 # Copy backend source code
 COPY . .
 
-# ------------------------------------------------------------
-# Configure and build ChronoPlan
-# ------------------------------------------------------------
+# ============================================================
+# CONFIGURE AND BUILD CHRONOPLAN
+# ============================================================
 
 RUN cmake -S . -B build -G "Unix Makefiles" \
     -DCMAKE_TOOLCHAIN_FILE=${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake \
@@ -65,17 +72,24 @@ RUN cmake -S . -B build -G "Unix Makefiles" \
     -DCMAKE_BUILD_TYPE=Release \
     || { \
         echo ""; \
-        echo "========================================"; \
-        echo "       VCPKG CONFIGURATION FAILED"; \
-        echo "========================================"; \
+        echo "================================================"; \
+        echo "       CHRONOPLAN CONFIGURATION FAILED"; \
+        echo "================================================"; \
         echo ""; \
-        echo "VCPKG MANIFEST LOG:"; \
+        echo "========== VCPKG MANIFEST LOG =========="; \
         cat build/vcpkg-manifest-install.log 2>/dev/null || true; \
         echo ""; \
-        echo "LIBSODIUM BUILD LOGS:"; \
-        find ${VCPKG_ROOT}/buildtrees/libsodium \
-            -type f -name "*.log" \
+        echo "========== ALL LIBSODIUM BUILD FILES =========="; \
+        find ${VCPKG_ROOT}/buildtrees/libsodium -type f -print 2>/dev/null || true; \
+        echo ""; \
+        echo "========== LIBSODIUM LOG CONTENTS =========="; \
+        find ${VCPKG_ROOT}/buildtrees/libsodium -type f -name "*.log" \
             -exec sh -c 'echo "--- $1 ---"; tail -n 100 "$1"' _ {} \; \
+            2>/dev/null || true; \
+        echo ""; \
+        echo "========== VCPKG DEBUG LOGS =========="; \
+        find ${VCPKG_ROOT}/buildtrees -maxdepth 3 -type f -name "*.log" \
+            -exec sh -c 'echo "--- $1 ---"; tail -n 40 "$1"' _ {} \; \
             2>/dev/null || true; \
         exit 1; \
     }
@@ -84,9 +98,9 @@ RUN cmake -S . -B build -G "Unix Makefiles" \
 RUN cmake --build build --parallel 2
 
 
-# ------------------------------------------------------------
+# ============================================================
 # STAGE 2: PRODUCTION RUNTIME
-# ------------------------------------------------------------
+# ============================================================
 
 FROM ubuntu:24.04 AS runtime
 
@@ -113,13 +127,13 @@ COPY --from=builder /opt/vcpkg/installed/x64-linux/bin /opt/vcpkg/bin
 # Configure shared library lookup
 ENV LD_LIBRARY_PATH=/opt/vcpkg/lib:/opt/vcpkg/bin
 
-# Render configuration
+# Render server configuration
 ENV CHRONOPLAN_BIND_ADDR=0.0.0.0
 
-# Free plan: temporary database storage
+# Render Free plan: temporary database storage
 ENV CHRONOPLAN_DB_PATH=/tmp/chronoplan.db
 
-# Render provides PORT automatically
+# Render supplies PORT automatically
 EXPOSE 10000
 
 # Start ChronoPlan
