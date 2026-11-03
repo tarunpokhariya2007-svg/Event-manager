@@ -33,6 +33,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     tar \
     pkg-config \
+    autoconf-archive \
+libltdl-dev \
     autoconf \
     automake \
     libtool \
